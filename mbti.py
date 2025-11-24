@@ -1,126 +1,33 @@
 import streamlit as st
 import pandas as pd
 
-# 1. 페이지 설정
+# 1. 페이지 기본 설정
 st.set_page_config(page_title="MBTI World Map", page_icon="🌍", layout="wide")
 
-# 2. MBTI 기본 설명 데이터 (하드코딩)
+# 2. Semantic UI 및 커스텀 CSS 주입
+# Streamlit에서 외부 CSS를 사용하기 위해 HTML 헤더를 주입합니다.
+st.markdown("""
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css">
+    <style>
+        /* Streamlit 기본 여백 조정 및 Semantic UI와의 조화 */
+        .main { background-color: #F9FAFB; }
+        .stApp { margin-top: -50px; }
+        div.block-container { padding-top: 2rem; }
+    </style>
+""", unsafe_allow_html=True)
+
+# 3. MBTI 기본 설명 데이터
 mbti_descriptions = {
-    "ISTJ": "현실주의자 - 책임감이 강하고, 현실적이며, 매사에 철저하고 보수적입니다.",
-    "ISFJ": "수호자 - 차분하고 헌신적이며, 성실하고 온화한 협조자입니다.",
-    "INFJ": "옹호자 - 조용하고 신비로우며, 샘솟는 영감으로 지칠 줄 모르는 이상주의자입니다.",
-    "INTJ": "전략가 - 용의주도하고 독창적이며, 모든 일에 계획을 세우는 전략가입니다.",
-    "ISTP": "장인 - 과묵하고 분석적이며, 적응력이 강하고 도구를 잘 다루는 만능 재주꾼입니다.",
-    "ISFP": "모험가 - 온화하고 겸손하며, 삶의 여유를 만끽하는 진정한 예술가입니다.",
-    "INFP": "중재자 - 상냥하고 이타적이며, 낭만적인 이상을 꿈꾸는 시인입니다.",
-    "INTP": "논리술사 - 지적 호기심이 높고 잠재력과 가능성을 탐구하는 사색가입니다.",
-    "ESTP": "사업가 - 타협을 모르고, 위험을 즐기며, 모험을 즐기는 영리한 사업가입니다.",
-    "ESFP": "연예인 - 사교적이고 활동적이며, 수용적이고 낙천적인 만능 엔터테이너입니다.",
-    "ENFP": "활동가 - 열정적이고 창의적이며, 긍정적인 에너지가 넘치는 재기발랄한 활동가입니다.",
-    "ENTP": "변론가 - 박학다식하고 독창적이며, 끊임없이 새로운 시도를 하는 논쟁을 즐기는 변론가입니다.",
-    "ESTJ": "경영자 - 구체적이고 현실적이며, 사실적이고 활동을 조직화하는 지도자입니다.",
-    "ESFJ": "집정관 - 사교적이고 친절하며, 타인에 대한 관심과 배려가 넘치는 인기쟁이입니다.",
-    "ENFJ": "선도자 - 카리스마와 충만한 열정을 지닌 타고난 리더입니다.",
-    "ENTJ": "통솔자 - 대담하고 상상력이 풍부하며, 강력한 의지로 무리(조직)를 이끄는 지도자입니다."
-}
-
-# 3. 데이터 로드 함수
-@st.cache_data
-def load_data():
-    try:
-        # 파일이 같은 경로에 있다고 가정합니다.
-        df = pd.read_csv('countriesMBTI_16types.csv')
-        return df
-    except FileNotFoundError:
-        return None
-
-# --- 메인 앱 로직 ---
-
-def main():
-    st.title("🌍 당신의 MBTI는 어디서 가장 인기 있을까요?")
-    st.markdown("데이터를 기반으로 당신의 성향과 가장 잘 어울리는 국가를 찾아드립니다.")
-    
-    st.divider() # 구분선
-
-    # 데이터 불러오기
-    df = load_data()
-    
-    if df is None:
-        st.error("데이터 파일(countriesMBTI_16types.csv)을 찾을 수 없습니다. 파일 경로를 확인해주세요.")
-        return
-
-    # MBTI 리스트 생성
-    mbti_list = list(mbti_descriptions.keys())
-    
-    # 사이드바 혹은 메인 상단에서 선택
-    # 초기 상태(index=None)을 지원하여 '선택 안 함' 상태를 만듭니다.
-    selected_mbti = st.selectbox(
-        "당신의 MBTI를 선택해주세요 👇",
-        options=mbti_list,
-        index=None, 
-        placeholder="MBTI를 선택하세요..."
-    )
-
-    # 4. 선택 여부에 따른 화면 분기
-    if selected_mbti is None:
-        # 아무것도 선택되지 않았을 때
-        st.info("👋 위 메뉴에서 자신의 MBTI 유형을 선택하면 분석 결과가 나타납니다!")
-        
-        # 간단한 이미지나 텍스트로 꾸밈 (선택 유도)
-        st.markdown("""
-        ### ❓ 무엇을 알 수 있나요?
-        - 나의 **성격 유형 요약**
-        - 내 성향이 **가장 흔한 국가**
-        - 전 세계 **통계 데이터 시각화**
-        """)
-        
-    else:
-        # MBTI가 선택되었을 때
-        
-        # --- A. 설명 섹션 ---
-        st.header(f"✨ 당신은 [{selected_mbti}] 유형이군요!")
-        st.success(mbti_descriptions[selected_mbti])
-        
-        # --- B. 데이터 분석 섹션 ---
-        # 해당 MBTI 컬럼의 데이터를 기준으로 내림차순 정렬
-        sorted_df = df.sort_values(by=selected_mbti, ascending=False).head(10)
-        
-        # 1위 국가 정보 추출
-        top_country = sorted_df.iloc[0]['Country']
-        top_value = sorted_df.iloc[0][selected_mbti]
-        
-        # 데이터 값은 비율(0.0~1.0)로 추정되므로 퍼센트로 변환
-        percentage = top_value * 100 
-
-        # --- C. 맞춤형 멘트 및 통계 ---
-        st.subheader("📊 데이터 분석 결과")
-        
-        # 컬럼을 나누어 왼쪽엔 텍스트, 오른쪽엔 차트 배치
-        col1, col2 = st.columns([1, 1.5])
-        
-        with col1:
-            st.markdown(f"""
-            당신의 성향인 **{selected_mbti}**는 전 세계적으로 다양한 분포를 보입니다.
-            
-            데이터에 따르면, 당신과 같은 유형의 사람들이 
-            가장 많이 분포한 국가는 **🌏 {top_country}** 입니다.
-            
-            이 국가에서는 전체 인구의 약 **{percentage:.1f}%**가 
-            당신과 같은 성향을 가지고 있어요!
-            
-            > *"{top_country}로 여행을 떠난다면, 마음이 잘 맞는 친구들을 더 쉽게 만날 수 있지 않을까요?"*
-            """)
-            
-            # 전체 평균 계산
-            avg_value = df[selected_mbti].mean() * 100
-            st.caption(f"전 세계 {selected_mbti} 평균 비율: {avg_value:.1f}%")
-
-        with col2:
-            st.markdown(f"**🌐 {selected_mbti} 비율이 가장 높은 국가 Top 10**")
-            
-            # 차트를 위해 데이터 가공 (국가를 인덱스로 설정)
-            chart_data = sorted_df.set_index('Country')[selected_mbti]
-            st.bar_chart(chart_data, color="#4A90E2") # 파란색 계열
-
-if __name__ == "__main__":
-    main()
+    "ISTJ": {"title": "현실주의자", "desc": "책임감이 강하고 현실적이며, 매사에 철저하고 보수적입니다.", "icon": "building", "color": "blue"},
+    "ISFJ": {"title": "수호자", "desc": "차분하고 헌신적이며, 성실하고 온화한 협조자입니다.", "icon": "shield alternate", "color": "teal"},
+    "INFJ": {"title": "옹호자", "desc": "조용하고 신비로우며, 샘솟는 영감으로 지칠 줄 모르는 이상주의자입니다.", "icon": "leaf", "color": "green"},
+    "INTJ": {"title": "전략가", "desc": "용의주도하고 독창적이며, 모든 일에 계획을 세우는 전략가입니다.", "icon": "chess", "color": "purple"},
+    "ISTP": {"title": "장인", "desc": "과묵하고 분석적이며, 적응력이 강하고 도구를 잘 다루는 만능 재주꾼입니다.", "icon": "wrench", "color": "grey"},
+    "ISFP": {"title": "모험가", "desc": "온화하고 겸손하며, 삶의 여유를 만끽하는 진정한 예술가입니다.", "icon": "paint brush", "color": "yellow"},
+    "INFP": {"title": "중재자", "desc": "상냥하고 이타적이며, 낭만적인 이상을 꿈꾸는 시인입니다.", "icon": "heart", "color": "green"},
+    "INTP": {"title": "논리술사", "desc": "지적 호기심이 높고 잠재력과 가능성을 탐구하는 사색가입니다.", "icon": "lightbulb", "color": "violet"},
+    "ESTP": {"title": "사업가", "desc": "타협을 모르고, 위험을 즐기며, 모험을 즐기는 영리한 사업가입니다.", "icon": "chart line", "color": "red"},
+    "ESFP": {"title": "연예인", "desc": "사교적이고 활동적이며, 수용적이고 낙천적인 만능 엔터테이너입니다.", "icon": "music", "color": "orange"},
+    "ENFP": {"title": "활동가", "desc": "열정적이고 창의적이며, 긍정적인 에너지가 넘치는 재기발랄한 활동가입니다.", "icon": "smile", "color": "orange"},
+    "ENTP": {"title": "변론가", "desc": "박학다식하고 독창적이며, 끊임없이 새로운 시도를 하는 논쟁을 즐기는 변론가입니다.", "icon": "comments", "color": "red"},
+    "ESTJ": {"title": "경영자", "desc": "구체적이고 현실적이며, 사실적이고 활동을 조직화하는 지도자입니다.", "icon": "sitemap", "color
