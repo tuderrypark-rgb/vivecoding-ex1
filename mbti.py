@@ -1,167 +1,135 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 
-# 1. 페이지 기본 설정
-st.set_page_config(page_title="MBTI World Map", page_icon="🌍", layout="wide")
-
-# 2. Semantic UI 및 커스텀 CSS 주입
-st.markdown("""
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css">
-    <style>
-        /* Streamlit 기본 여백 조정 및 Semantic UI와의 조화 */
-        .main { background-color: #F9FAFB; }
-        .stApp { margin-top: -50px; }
-        div.block-container { padding-top: 2rem; }
-    </style>
-""", unsafe_allow_html=True)
-
-# 3. MBTI 기본 설명 데이터 (수정됨)
+# 1. MBTI 유형별 설명 데이터
 mbti_descriptions = {
-    "ISTJ": {"title": "현실주의자", "desc": "책임감이 강하고 현실적이며, 매사에 철저하고 보수적입니다.", "icon": "building", "color": "blue"},
-    "ISFJ": {"title": "수호자", "desc": "차분하고 헌신적이며, 성실하고 온화한 협조자입니다.", "icon": "shield alternate", "color": "teal"},
-    "INFJ": {"title": "옹호자", "desc": "조용하고 신비로우며, 샘솟는 영감으로 지칠 줄 모르는 이상주의자입니다.", "icon": "leaf", "color": "green"},
-    "INTJ": {"title": "전략가", "desc": "용의주도하고 독창적이며, 모든 일에 계획을 세우는 전략가입니다.", "icon": "chess", "color": "purple"},
-    "ISTP": {"title": "장인", "desc": "과묵하고 분석적이며, 적응력이 강하고 도구를 잘 다루는 만능 재주꾼입니다.", "icon": "wrench", "color": "grey"},
-    "ISFP": {"title": "모험가", "desc": "온화하고 겸손하며, 삶의 여유를 만끽하는 진정한 예술가입니다.", "icon": "paint brush", "color": "yellow"},
-    "INFP": {"title": "중재자", "desc": "상냥하고 이타적이며, 낭만적인 이상을 꿈꾸는 시인입니다.", "icon": "heart", "color": "green"},
-    "INTP": {"title": "논리술사", "desc": "지적 호기심이 높고 잠재력과 가능성을 탐구하는 사색가입니다.", "icon": "lightbulb", "color": "violet"},
-    "ESTP": {"title": "사업가", "desc": "타협을 모르고, 위험을 즐기며, 모험을 즐기는 영리한 사업가입니다.", "icon": "chart line", "color": "red"},
-    "ESFP": {"title": "연예인", "desc": "사교적이고 활동적이며, 수용적이고 낙천적인 만능 엔터테이너입니다.", "icon": "music", "color": "orange"},
-    "ENFP": {"title": "활동가", "desc": "열정적이고 창의적이며, 긍정적인 에너지가 넘치는 재기발랄한 활동가입니다.", "icon": "smile", "color": "orange"},
-    "ENTP": {"title": "변론가", "desc": "박학다식하고 독창적이며, 끊임없이 새로운 시도를 하는 논쟁을 즐기는 변론가입니다.", "icon": "comments", "color": "red"},
-    "ESTJ": {"title": "경영자", "desc": "구체적이고 현실적이며, 사실적이고 활동을 조직화하는 지도자입니다.", "icon": "sitemap", "color": "blue"},
-    "ESFJ": {"title": "집정관", "desc": "사교적이고 친절하며, 타인에 대한 관심과 배려가 넘치는 인기쟁이입니다.", "icon": "users", "color": "teal"},
-    "ENFJ": {"title": "선도자", "desc": "카리스마와 충만한 열정을 지닌 타고난 리더입니다.", "icon": "sun", "color": "yellow"},
-    "ENTJ": {"title": "통솔자", "desc": "대담하고 상상력이 풍부하며, 강력한 의지로 무리(조직)를 이끄는 지도자입니다.", "icon": "bullhorn", "color": "black"}
+    "INTJ": {"name": "용의주도한 전략가", "desc": "전체적인 그림을 그리며 전략을 세우는 것을 좋아합니다. 지적 호기심이 많고 독립적이며, 완벽주의적인 경향이 있습니다."},
+    "INTP": {"name": "아이디어 뱅크", "desc": "지식에 대한 끝없는 갈망을 가진 논리적인 사색가입니다. 복잡한 문제를 분석하고 새로운 이론을 탐구하는 것을 즐깁니다."},
+    "ENTJ": {"name": "대담한 통솔자", "desc": "타고난 지도자로, 목표를 향해 사람들을 이끄는 데 능숙합니다. 효율성과 조직력을 중요시하며 카리스마가 넘칩니다."},
+    "ENTP": {"name": "뜨거운 논쟁을 즐기는 변론가", "desc": "지적인 도전과 논쟁을 즐기며, 새로운 아이디어를 끊임없이 탐색합니다. 기발하고 재치있는 방식으로 상황을 해결합니다."},
+    "INFJ": {"name": "선의의 옹호자", "desc": "깊은 통찰력과 강한 신념을 가진 조용하고 신비로운 사람입니다. 다른 사람들의 성장과 발전에 기여하는 것을 중요하게 생각합니다."},
+    "INFP": {"name": "열정적인 중재자", "desc": "내면의 가치와 이상을 추구하는 사려 깊고 온화한 이상주의자입니다. 상상력이 풍부하고 예술적인 감수성이 뛰어납니다."},
+    "ENFJ": {"name": "정의로운 사회운동가", "desc": "사람들의 잠재력을 이끌어내는 데 능숙하며, 사회 정의 실현에 앞장섭니다. 따뜻하고 책임감이 강하며 타인에게 헌신적입니다."},
+    "ENFP": {"name": "재기발랄한 활동가", "desc": "넘치는 에너지와 상상력을 가진 자유로운 영혼입니다. 새로운 가능성을 탐색하며 사람들과의 관계를 통해 영감을 얻습니다."},
+    "ISTJ": {"name": "청렴결백한 논리주의자", "desc": "사실에 입각하여 논리적으로 사고하며, 질서와 전통을 중요하게 생각하는 책임감 있는 현실주의자입니다."},
+    "ISFJ": {"name": "용감한 수호자", "desc": "따뜻하고 헌신적이며, 주변 사람들을 보호하고 돕는 데 열심입니다. 조용하지만 강한 책임감과 성실함을 가지고 있습니다."},
+    "ESTJ": {"name": "엄격한 관리자", "desc": "체계적이고 조직적이며, 규칙과 절차를 준수하는 데 철저합니다. 현실적이고 실용적인 리더십을 발휘합니다."},
+    "ESFJ": {"name": "사교적인 외교관", "desc": "사람들과의 관계를 중요시하며, 친절하고 사교성이 좋습니다. 주변 분위기를 밝게 만들고 화합을 도모하는 데 능숙합니다."},
+    "ISTP": {"name": "만능 재주꾼", "desc": "호기심이 많고 손재주가 뛰어나며, 직접 경험하고 배우는 것을 선호합니다. 문제 해결 능력이 뛰어나고 독립적입니다."},
+    "ISFP": {"name": "자유로운 영혼의 연예인", "desc": "예술적인 감수성이 뛰어나고, 현재를 즐기며 삶의 아름다움을 추구합니다. 겸손하고 유연하며 자신의 가치관을 중요하게 생각합니다."},
+    "ESTP": {"name": "모험을 즐기는 사업가", "desc": "활동적이고 현실적이며, 즉흥적이고 대담한 행동으로 문제를 해결합니다. 사람들과 어울리는 것을 좋아하고 에너지가 넘칩니다."},
+    "ESFP": {"name": "자유로운 연예인", "desc": "주목받는 것을 즐기며, 밝고 긍정적인 에너지로 주변을 즐겁게 합니다. 삶을 축제처럼 즐기는 낙천적인 성향을 가지고 있습니다."},
 }
 
-# 4. 데이터 로드 함수
-@st.cache_data
-def load_data():
-    try:
-        # 파일 경로 확인 필요 (같은 폴더에 있는지)
-        df = pd.read_csv('countriesMBTI_16types.csv')
-        return df
-    except FileNotFoundError:
-        return None
+# 2. 데이터 로드 및 전처리
+try:
+    df = pd.read_csv("countriesMBTI_16types.csv")
+    df_melted = df.melt(id_vars=["Country"], 
+                        var_name="MBTI", 
+                        value_name="Proportion")
+except FileNotFoundError:
+    st.error("🚨 'countriesMBTI_16types.csv' 파일을 찾을 수 없습니다. 파일을 확인해주세요.")
+    df = pd.DataFrame() # 빈 데이터프레임으로 설정하여 에러 방지
 
-def main():
-    # --- 헤더 영역 (Semantic UI Header) ---
-    st.markdown("""
-        <div class="ui center aligned icon header" style="margin-top: 20px;">
-            <i class="circular globe icon teal"></i>
-            Global MBTI Report
-            <div class="sub header">데이터로 알아보는 당신의 성향이 가장 환영받는 국가</div>
-        </div>
-        <div class="ui divider"></div>
-    """, unsafe_allow_html=True)
 
-    # 데이터 불러오기
-    df = load_data()
-    if df is None:
-        st.error("데이터 파일(countriesMBTI_16types.csv)을 찾을 수 없습니다.")
-        return
+# 3. 스트림릿 앱 설정
+st.set_page_config(
+    page_title="MBTI 성향 & 국가 통계 웹앱",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-    # MBTI 선택 (중앙 정렬을 위해 컬럼 사용)
-    col_spacer_l, col_select, col_spacer_r = st.columns([1, 2, 1])
-    with col_select:
-        selected_mbti = st.selectbox(
-            "나의 MBTI 유형 선택",
-            options=list(mbti_descriptions.keys()),
-            index=None,
-            placeholder="👇 여기를 눌러 MBTI를 선택하세요"
-        )
+st.title("🌟 MBTI 성향 분석 및 국가별 통계 정보")
+st.markdown("---")
 
-    # --- 선택 전/후 분기 처리 ---
-    if selected_mbti is None:
-        # 초기 화면: Semantic UI Info Message
-        st.markdown("""
-            <div class="ui container" style="margin-top: 30px;">
-                <div class="ui icon message info">
-                    <i class="hand point up outline icon"></i>
-                    <div class="content">
-                        <div class="header">
-                            MBTI를 선택해주세요!
-                        </div>
-                        <p>상단 메뉴에서 유형을 선택하면, 전 세계 통계 정보를 분석하여 보여드립니다.</p>
-                    </div>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
+
+# 4. 사이드바 MBTI 선택 위젯
+with st.sidebar:
+    st.header("👤 MBTI 유형 선택")
+    mbti_options = ["MBTI를 선택해주세요"] + list(mbti_descriptions.keys())
     
-    else:
-        # 선택 후 화면
-        info = mbti_descriptions[selected_mbti]
+    # 세션 상태를 활용하여 현재 선택된 MBTI를 저장
+    if 'selected_mbti' not in st.session_state:
+        st.session_state.selected_mbti = mbti_options[0]
         
-        # A. MBTI 설명 카드 (Semantic UI Segment & Header)
-        st.markdown(f"""
-            <div class="ui container" style="margin-top: 20px;">
-                <div class="ui segment raised {info['color']}">
-                    <h2 class="ui header">
-                        <i class="{info['icon']} icon"></i>
-                        <div class="content">
-                            {selected_mbti} : {info['title']}
-                            <div class="sub header">{info['desc']}</div>
-                        </div>
-                    </h2>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
+    # selectbox 위젯
+    selected_mbti = st.selectbox(
+        "당신의 MBTI 유형을 골라보세요:", 
+        options=mbti_options,
+        index=mbti_options.index(st.session_state.selected_mbti)
+    )
+    
+    # 선택된 값 업데이트
+    st.session_state.selected_mbti = selected_mbti
+    
+    st.markdown("---")
+    st.info("이 앱은 스트림릿과 Plotly를 사용하여 제작되었습니다.")
 
-        # 데이터 분석
-        # 해당 MBTI 컬럼이 존재하는지 확인
-        if selected_mbti in df.columns:
-            sorted_df = df.sort_values(by=selected_mbti, ascending=False).head(10)
-            top_country = sorted_df.iloc[0]['Country']
-            top_value = sorted_df.iloc[0][selected_mbti] * 100
-            
-            # B. 통계 및 멘트 (Semantic UI Statistics & Message)
-            col1, col2 = st.columns([1, 1.5])
 
-            with col1:
-                st.markdown(f"""
-                    <div class="ui card fluid">
-                        <div class="content">
-                            <div class="header">🏆 Best Match Country</div>
-                        </div>
-                        <div class="content">
-                            <div class="ui tiny statistic">
-                                <div class="value">
-                                    <i class="map marker alternate icon red"></i> {top_country}
-                                </div>
-                                <div class="label">
-                                    가장 높은 비율
-                                </div>
-                            </div>
-                            <div class="ui divider"></div>
-                            <div class="ui huge statistic">
-                                <div class="value">
-                                    {top_value:.1f}%
-                                </div>
-                                <div class="label">
-                                    인구 비율
-                                </div>
-                            </div>
-                        </div>
-                        <div class="extra content">
-                            <div class="ui info message">
-                                <p><b>"당신을 위한 추천 멘트"</b><br>
-                                {top_country}의 거리는 당신과 같은 {selected_mbti}의 에너지로 가득 차 있습니다. 
-                                이곳에서라면 마음이 통하는 소울메이트를 더 쉽게 만날 수 있을 거예요!</p>
-                            </div>
-                        </div>
-                    </div>
-                """, unsafe_allow_html=True)
+# 5. 메인 콘텐츠 표시
+if st.session_state.selected_mbti == "MBTI를 선택해주세요":
+    # 5-1. 초기 접속 메시지 (요구사항 4)
+    st.header("👋 환영합니다!")
+    st.markdown("""
+        **왼쪽 사이드바**에서 당신의 **MBTI 유형**을 선택해주세요.
+        
+        선택하시면 해당 MBTI에 대한 자세한 설명과 
+        국가별 통계 정보를 멋진 그래프로 확인하실 수 있습니다!
+        
+        ---
+    """)
+    st.balloons() # 초기에 풍선 효과 추가
+    
+else:
+    mbti = st.session_state.selected_mbti
+    info = mbti_descriptions[mbti]
+    
+    st.header(f"✨ 당신의 MBTI: {mbti} ({info['name']})")
+    
+    # 5-2. MBTI 설명 표시 (요구사항 2)
+    st.subheader("💡 유형 설명")
+    st.markdown(f"> **{info['desc']}**")
+    st.markdown("---")
+    
+    if not df.empty:
+        st.subheader(f"🌍 {mbti} 유형의 국가별 통계 분석")
+        
+        # 선택된 MBTI 데이터 필터링 및 상위 10개 추출
+        mbti_df = df_melted[df_melted["MBTI"] == mbti].sort_values(by="Proportion", ascending=False)
+        top_10_countries = mbti_df.head(10).copy()
+        
+        # 비율을 %로 변환
+        top_10_countries["Proportion_pct"] = (top_10_countries["Proportion"] * 100).round(2)
+        
+        # 5-3. 통계 정보 시각화 (Plotly)
+        fig = px.bar(
+            top_10_countries,
+            x="Country",
+            y="Proportion_pct",
+            text="Proportion_pct",
+            title=f"**{mbti} 유형 비율이 높은 상위 10개 국가**",
+            labels={"Proportion_pct": f"{mbti} 유형 비율 (%)", "Country": "국가"},
+            color="Proportion_pct",
+            color_continuous_scale=px.colors.sequential.Plotly3,
+        )
+        
+        fig.update_traces(texttemplate='%{text:.2f}%', textposition='outside')
+        fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
+        st.plotly_chart(fig, use_container_width=True)
 
-            with col2:
-                st.markdown(f"""
-                    <div class="ui top attached label teal">🌐 국가별 {selected_mbti} 비율 Top 10</div>
-                """, unsafe_allow_html=True)
-                
-                chart_data = sorted_df.set_index('Country')[selected_mbti]
-                st.bar_chart(chart_data, color="#00B5AD")
+        # 5-4. 통계 기반 맞춤 멘트 (요구사항 3)
+        st.subheader("💬 통계 기반 맞춤 멘트")
+        
+        # 가장 비율이 높은 국가 (1위)
+        if not top_10_countries.empty:
+            best_country = top_10_countries.iloc[0]
+            ment_message = f"""
+            📊 통계적으로 **{mbti}** 유형의 비율이 가장 높은 국가는 **{best_country['Country']}** 입니다. 
+            해당 국가에서는 전체 인구 중 **{best_country['Proportion_pct']:.2f}%**가 당신과 같은 성향을 가지고 있다고 해요! 
+            이는 **{mbti}** 유형의 특성이 이 나라의 문화나 사회적 환경과 어떠한 방식으로든 관련이 있을 수 있다는 흥미로운 지표입니다. 
+            당신의 성향이 이끌리는 문화권일지도 모르겠네요!
+            """
+            st.success(ment_message)
         else:
-            st.error(f"데이터 파일에 '{selected_mbti}' 컬럼이 없습니다.")
-
-if __name__ == "__main__":
-    main()
+            st.warning(f"죄송합니다. **{mbti}** 유형에 대한 국가별 통계 정보가 충분하지 않습니다.")
